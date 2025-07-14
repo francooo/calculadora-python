@@ -1,38 +1,57 @@
-# Calculadora Python
+# Calculadora - Múltiplas Versões
 
-Uma calculadora simples em Python com operações básicas.
+Calculadora completa com versões Python, Web e AWS.
 
-## Funcionalidades
+## 📁 Estrutura do Projeto
 
-- ✅ Soma
-- ✅ Subtração  
-- ✅ Multiplicação
-- ✅ Divisão
-- ✅ Tratamento de erros
-- ✅ Interface interativa
+```
+calculadora-python/
+├── calculadora.py          # Versão Python console
+├── lambda_function.py      # Versão AWS Lambda (Python)
+├── calculadora-lambda.zip  # Pacote Lambda Python
+├── web/                    # Versão Web Full-Stack
+│   ├── index.html         # Frontend
+│   ├── style.css          # Estilos
+│   ├── script.js          # JavaScript
+│   ├── server.js          # Backend Node.js
+│   ├── lambda-api.js      # Lambda Node.js
+│   └── package.json       # Dependências
+└── README-AWS.md          # Guia AWS
+```
 
-## Como usar
+## 🚀 Versões Disponíveis
 
+### 1. Python Console
 ```bash
 python calculadora.py
 ```
 
-## Exemplo de uso
-
-```
-=== CALCULADORA ===
-1. Somar
-2. Subtrair
-3. Multiplicar
-4. Dividir
-5. Sair
-
-Escolha uma opção (1-5): 1
-Digite o primeiro número: 10
-Digite o segundo número: 5
-Resultado: 15.0
+### 2. Web Application
+```bash
+cd web
+npm install
+npm start
+# Acesse: http://localhost:3000
 ```
 
-## Requisitos
+### 3. AWS Lambda
+- Upload `calculadora-lambda.zip` (Python)
+- Upload `web/calculadora-web-lambda.zip` (Node.js)
 
-- Python 3.x
+## ✨ Funcionalidades
+
+- ✅ Soma, Subtração, Multiplicação, Divisão
+- ✅ Tratamento de erros
+- ✅ Interface console (Python)
+- ✅ Interface web responsiva
+- ✅ API REST
+- ✅ Deploy AWS Lambda
+- ✅ Validação completa
+
+## 🛠️ Tecnologias
+
+- **Python**: Console + Lambda
+- **Node.js**: Web server + Lambda
+- **HTML/CSS/JS**: Frontend
+- **AWS**: Lambda + API Gateway
+- **Express**: Web framework
