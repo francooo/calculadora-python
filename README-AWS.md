@@ -21,11 +21,23 @@
 - Clique "Save"
 
 ### 3. Testar a função:
+
+**Operação básica:**
 ```json
 {
   "operacao": "somar",
   "numero1": 10,
   "numero2": 5
+}
+```
+
+**Equação de segundo grau:**
+```json
+{
+  "operacao": "equacao_segundo_grau",
+  "a": 1,
+  "b": -5,
+  "c": 6
 }
 ```
 
@@ -36,13 +48,37 @@
 
 ## Operações disponíveis:
 - `somar`, `subtrair`, `multiplicar`, `dividir`
+- `equacao_segundo_grau`
 
-## Exemplo de resposta:
+## Exemplos de resposta:
+
+**Operação básica:**
 ```json
 {
   "operacao": "somar",
   "numero1": 10,
   "numero2": 5,
   "resultado": 15
+}
+```
+
+**Equação de segundo grau:**
+```json
+{
+  "operacao": "equacao_segundo_grau",
+  "coeficientes": {"a": 1, "b": -5, "c": 6},
+  "resultado": {
+    "delta": 1,
+    "raizes": [3.0, 2.0],
+    "etapas": [
+      "Equação: 1x² + -5x + 6 = 0",
+      "1. Calculando o discriminante: Δ = b² - 4ac = -5² - 4 × 1 × 6 = 1",
+      "2. Como Δ = 1 ≥ 0, calculamos as raízes:",
+      "   x₁ = (-b + √Δ) / 2a = (-(-5) + √1) / (2 × 1) = 3.0000",
+      "   x₂ = (-b - √Δ) / 2a = (-(-5) - √1) / (2 × 1) = 2.0000",
+      "3. A equação possui duas raízes reais: x₁ = 3.0000 e x₂ = 2.0000"
+    ],
+    "mensagem": "A equação possui duas raízes reais."
+  }
 }
 ```
