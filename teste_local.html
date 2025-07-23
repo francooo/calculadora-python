@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora - Teste Local</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1, h2 {
+            color: #333;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #resultado {
+            margin-top: 20px;
+            white-space: pre-wrap;
+        }
+        .hidden {
+            display: none;
+        }
+        .etapas {
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 4px solid #4CAF50;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            background-color: #ddd;
+            cursor: pointer;
+            border-radius: 4px 4px 0 0;
+            margin-right: 5px;
+        }
+        .tab.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .historico-item {
+            background-color: #fff;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            border-left: 4px solid #4CAF50;
+        }
+        .historico-item h3 {
+            margin-top: 0;
+            color: #4CAF50;
+        }
+        .historico-item p {
+            margin: 5px 0;
+        }
+        .historico-item .timestamp {
+            color: #777;
+            font-size: 0.9em;
+        }
+        .historico-item .detalhes {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+    <h1>Calculadora - Teste Local</h1>
+    
+    <div class="tabs">
+        <div class="tab active" data-tab="calculadora">Calculadora</div>
+        <div class="tab" data-tab="historico">Histórico</div>
+    </div>
+    
+    <div id="calculadora" class="tab-content active">
+        <div class="container">
+        
+        <div class="form-group">
+            <label for="operacao">Operação:</label>
+            <select id="operacao">
+                <option value="somar">Soma</option>
+                <option value="subtrair">Subtração</option>
+                <option value="multiplicar">Multiplicação</option>
+                <option value="dividir">Divisão</option>
+                <option value="equacao_segundo_grau">Equação de Segundo Grau</option>
+            </select>
+        </div>
+        
+        <div id="operacao-basica">
+            <div class="form-group">
+                <label for="numero1">Primeiro número:</label>
+                <input type="number" id="numero1" step="any">
+            </div>
+            
+            <div class="form-group">
+                <label for="numero2">Segundo número:</label>
+                <input type="number" id="numero2" step="any">
+            </div>
+        </div>
+        
+        <div id="operacao-equacao" class="hidden">
+            <div class="form-group">
+                <label for="coef-a">Coeficiente a:</label>
+                <input type="number" id="coef-a" step="any">
+            </div>
+            
+            <div class="form-group">
+                <label for="coef-b">Coeficiente b:</label>
+                <input type="number" id="coef-b" step="any">
+            </div>
+            
+            <div class="form-group">
+                <label for="coef-c">Coeficiente c:</label>
+                <input type="number" id="coef-c" step="any">
+            </div>
+        </div>
+        
+        <button id="calcular">Calcular</button>
+        
+        <div id="resultado"></div>
+        </div>
+    </div>
+    
+    <div id="historico" class="tab-content">
+        <div class="container">
+            <h2>Histórico de Cálculos</h2>
+            <button id="atualizar-historico">Atualizar Histórico</button>
+            <div id="lista-historico">
+                <p>Carregando histórico...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Configuração das abas
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabId = tab.getAttribute('data-tab');
+                    
+                    // Remove a classe active de todas as abas e conteúdos
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+                    
+                    // Adiciona a classe active à aba clicada e ao conteúdo correspondente
+                    tab.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                    
+                    // Carrega o histórico se a aba de histórico foi selecionada
+                    if (tabId === 'historico') {
+                        carregarHistorico();
+                    }
+                });
+            });
+            
+            // Botão para atualizar o histórico
+            document.getElementById('atualizar-historico').addEventListener('click', carregarHistorico);
+            
+            // Carrega o histórico inicialmente
+            carregarHistorico();
+            
+            // Função para carregar o histórico
+            function carregarHistorico() {
+                const listaHistorico = document.getElementById('lista-historico');
+                listaHistorico.innerHTML = '<p>Carregando histórico...</p>';
+                
+                fetch('/historico?limite=10')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.erro) {
+                            listaHistorico.innerHTML = `<p style="color: red;">Erro: ${data.erro}</p>`;
+                            return;
+                        }
+                        
+                        const historico = data.historico || [];
+                        
+                        if (historico.length === 0) {
+                            listaHistorico.innerHTML = '<p>Nenhum cálculo encontrado no histórico.</p>';
+                            return;
+                        }
+                        
+                        let html = '';
+                        historico.forEach(item => {
+                            let detalhes = '';
+                            let resultado = '';
+                            
+                            if (item.operacao === 'equacao_segundo_grau') {
+                                const entrada = item.entrada;
+                                detalhes = `Equação: ${entrada.a}x² + ${entrada.b}x + ${entrada.c} = 0`;
+                                
+                                if (item.resultado.raizes && item.resultado.raizes.length > 0) {
+                                    if (item.resultado.raizes.length === 1) {
+                                        resultado = `Raíz: x = ${item.resultado.raizes[0]}`;
+                                    } else {
+                                        resultado = `Raízes: x₁ = ${item.resultado.raizes[0]} e x₂ = ${item.resultado.raizes[1]}`;
+                                    }
+                                } else {
+                                    resultado = 'A equação não possui raízes reais.';
+                                }
+                            } else {
+                                const entrada = item.entrada;
+                                detalhes = `${entrada.numero1} ${obterSimbolo(item.operacao)} ${entrada.numero2}`;
+                                resultado = `Resultado: ${item.resultado}`;
+                            }
+                            
+                            const data = new Date(item.timestamp).toLocaleString();
+                            
+                            html += `
+                                <div class="historico-item">
+                                    <h3>${formatarOperacao(item.operacao)}</h3>
+                                    <p class="timestamp">${data}</p>
+                                    <div class="detalhes">
+                                        <p>${detalhes}</p>
+                                        <p><strong>${resultado}</strong></p>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        listaHistorico.innerHTML = html;
+                    })
+                    .catch(error => {
+                        listaHistorico.innerHTML = `<p style="color: red;">Erro ao carregar histórico: ${error.message}</p>`;
+                    });
+            }
+            
+            // Função para formatar o nome da operação
+            function formatarOperacao(operacao) {
+                switch(operacao) {
+                    case 'somar': return 'Soma';
+                    case 'subtrair': return 'Subtração';
+                    case 'multiplicar': return 'Multiplicação';
+                    case 'dividir': return 'Divisão';
+                    case 'equacao_segundo_grau': return 'Equação de Segundo Grau';
+                    default: return operacao;
+                }
+            }
+            
+            // Função para obter o símbolo da operação
+            function obterSimbolo(operacao) {
+                switch(operacao) {
+                    case 'somar': return '+';
+                    case 'subtrair': return '-';
+                    case 'multiplicar': return '×';
+                    case 'dividir': return '÷';
+                    default: return operacao;
+                }
+            }
+            const operacaoSelect = document.getElementById('operacao');
+            const operacaoBasica = document.getElementById('operacao-basica');
+            const operacaoEquacao = document.getElementById('operacao-equacao');
+            const calcularBtn = document.getElementById('calcular');
+            const resultadoDiv = document.getElementById('resultado');
+            
+            // Alternar entre os formulários com base na operação selecionada
+            operacaoSelect.addEventListener('change', function() {
+                if (this.value === 'equacao_segundo_grau') {
+                    operacaoBasica.classList.add('hidden');
+                    operacaoEquacao.classList.remove('hidden');
+                } else {
+                    operacaoBasica.classList.remove('hidden');
+                    operacaoEquacao.classList.add('hidden');
+                }
+            });
+            
+            // Calcular ao clicar no botão
+            calcularBtn.addEventListener('click', function() {
+                const operacao = operacaoSelect.value;
+                let dados = {};
+                
+                if (operacao === 'equacao_segundo_grau') {
+                    const a = parseFloat(document.getElementById('coef-a').value);
+                    const b = parseFloat(document.getElementById('coef-b').value);
+                    const c = parseFloat(document.getElementById('coef-c').value);
+                    
+                    if (isNaN(a) || isNaN(b) || isNaN(c)) {
+                        resultadoDiv.innerHTML = '<p style="color: red;">Por favor, preencha todos os coeficientes.</p>';
+                        return;
+                    }
+                    
+                    if (a === 0) {
+                        resultadoDiv.innerHTML = '<p style="color: red;">O coeficiente "a" não pode ser zero (não seria uma equação de segundo grau).</p>';
+                        return;
+                    }
+                    
+                    dados = { operacao, a, b, c };
+                } else {
+                    const numero1 = parseFloat(document.getElementById('numero1').value);
+                    const numero2 = parseFloat(document.getElementById('numero2').value);
+                    
+                    if (isNaN(numero1) || isNaN(numero2)) {
+                        resultadoDiv.innerHTML = '<p style="color: red;">Por favor, preencha ambos os números.</p>';
+                        return;
+                    }
+                    
+                    if (operacao === 'dividir' && numero2 === 0) {
+                        resultadoDiv.innerHTML = '<p style="color: red;">Erro: Divisão por zero não permitida.</p>';
+                        return;
+                    }
+                    
+                    dados = { operacao, numero1, numero2 };
+                }
+                
+                // Chamar a função Python diretamente (simulando o Lambda)
+                calcular(dados);
+            });
+            
+            // Função para calcular usando Python
+            function calcular(dados) {
+                resultadoDiv.innerHTML = '<p>Calculando...</p>';
+                
+                fetch('/calcular', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(dados)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Se o cálculo foi registrado no banco de dados, atualiza o histórico
+                    if (data.id) {
+                        // Atualiza o histórico se estiver visível
+                        if (document.getElementById('historico').classList.contains('active')) {
+                            carregarHistorico();
+                        }
+                    }
+                    if (data.erro) {
+                        resultadoDiv.innerHTML = `<p style="color: red;">Erro: ${data.erro}</p>`;
+                        return;
+                    }
+                    
+                    if (dados.operacao === 'equacao_segundo_grau') {
+                        const resultado = data.resultado;
+                        let html = '<h3>Resultado:</h3>';
+                        
+                        if (resultado.raizes.length === 0) {
+                            html += `<p>${resultado.mensagem}</p>`;
+                        } else if (resultado.raizes.length === 1) {
+                            html += `<p>${resultado.mensagem} x = ${resultado.raizes[0]}</p>`;
+                        } else {
+                            html += `<p>${resultado.mensagem} x₁ = ${resultado.raizes[0]} e x₂ = ${resultado.raizes[1]}</p>`;
+                        }
+                        
+                        html += '<h3>Etapas da resolução:</h3>';
+                        html += '<div class="etapas">';
+                        resultado.etapas.forEach(etapa => {
+                            html += `<p>${etapa}</p>`;
+                        });
+                        html += '</div>';
+                        
+                        resultadoDiv.innerHTML = html;
+                    } else {
+                        resultadoDiv.innerHTML = `<h3>Resultado: ${data.resultado}</h3>`;
+                    }
+                })
+                .catch(error => {
+                    resultadoDiv.innerHTML = `<p style="color: red;">Erro ao conectar com o servidor: ${error.message}</p>`;
+                });
+            }
+        });
+    </script>
+</body>
+</html>

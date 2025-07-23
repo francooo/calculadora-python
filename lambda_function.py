@@ -1,5 +1,17 @@
 import json
 import math
+import os
+from db_manager import CalculadoraDB
+
+# Inicializa o gerenciador de banco de dados
+db = CalculadoraDB(table_name=os.environ.get('DYNAMODB_TABLE', 'CalculadoraHistorico'))
+
+# Tenta criar a tabela se estiver em ambiente de desenvolvimento
+try:
+    if os.environ.get('AWS_EXECUTION_ENV') is None:  # Não estamos no Lambda
+        db.criar_tabela_se_nao_existir()
+except Exception as e:
+    print(f"Aviso: Não foi possível verificar/criar a tabela: {e}")
 
 def resolver_equacao_segundo_grau(a, b, c):
     """Resolve uma equação de segundo grau ax² + bx + c = 0 usando a fórmula de Bhaskara"""
@@ -46,6 +58,51 @@ def resolver_equacao_segundo_grau(a, b, c):
     }
 
 def lambda_handler(event, context):
+    # Verifica se é uma solicitação para obter o histórico
+    if event.get('httpMethod') == 'GET' and event.get('path', '').endswith('/historico'):
+        try:
+            limite = int(event.get('queryStringParameters', {}).get('limite', 10))
+            historico = db.obter_historico(limite=limite)
+            
+            return {
+                'statusCode': 200,
+                'body': json.dumps({
+                    'historico': historico
+                }, default=str)
+            }
+        except Exception as e:
+            return {
+                'statusCode': 500,
+                'body': json.dumps({
+                    'erro': f'Erro ao obter histórico: {str(e)}'
+                })
+            }
+    
+    # Verifica se é uma solicitação para obter um cálculo específico
+    if event.get('httpMethod') == 'GET' and '/calculo/' in event.get('path', ''):
+        try:
+            calc_id = event.get('path', '').split('/calculo/')[1]
+            calculo = db.obter_calculo_por_id(calc_id)
+            
+            if calculo:
+                return {
+                    'statusCode': 200,
+                    'body': json.dumps(calculo, default=str)
+                }
+            else:
+                return {
+                    'statusCode': 404,
+                    'body': json.dumps({
+                        'erro': f'Cálculo com ID {calc_id} não encontrado'
+                    })
+                }
+        except Exception as e:
+            return {
+                'statusCode': 500,
+                'body': json.dumps({
+                    'erro': f'Erro ao obter cálculo: {str(e)}'
+                })
+            }
     try:
         body = json.loads(event['body']) if event.get('body') else event
         
@@ -70,15 +127,34 @@ def lambda_handler(event, context):
                     }
                 resultado = a / b
                 
-            return {
-                'statusCode': 200,
-                'body': json.dumps({
-                    'operacao': operacao,
-                    'numero1': a,
-                    'numero2': b,
-                    'resultado': resultado
-                })
-            }
+            # Registra o cálculo no DynamoDB
+            try:
+                entrada = {'numero1': a, 'numero2': b}
+                calc_id = db.registrar_calculo(operacao, entrada, resultado)
+                
+                return {
+                    'statusCode': 200,
+                    'body': json.dumps({
+                        'id': calc_id,
+                        'operacao': operacao,
+                        'numero1': a,
+                        'numero2': b,
+                        'resultado': resultado
+                    })
+                }
+            except Exception as e:
+                print(f"Erro ao registrar no DynamoDB: {e}")
+                # Continua mesmo se falhar o registro
+                return {
+                    'statusCode': 200,
+                    'body': json.dumps({
+                        'operacao': operacao,
+                        'numero1': a,
+                        'numero2': b,
+                        'resultado': resultado,
+                        'db_error': str(e)
+                    })
+                }
         
         # Resolução de equação de segundo grau
         elif operacao == 'equacao_segundo_grau':
@@ -94,14 +170,32 @@ def lambda_handler(event, context):
             
             resultado = resolver_equacao_segundo_grau(a, b, c)
             
-            return {
-                'statusCode': 200,
-                'body': json.dumps({
-                    'operacao': operacao,
-                    'coeficientes': {'a': a, 'b': b, 'c': c},
-                    'resultado': resultado
-                })
-            }
+            # Registra o cálculo no DynamoDB
+            try:
+                entrada = {'a': a, 'b': b, 'c': c}
+                calc_id = db.registrar_calculo(operacao, entrada, resultado)
+                
+                return {
+                    'statusCode': 200,
+                    'body': json.dumps({
+                        'id': calc_id,
+                        'operacao': operacao,
+                        'coeficientes': {'a': a, 'b': b, 'c': c},
+                        'resultado': resultado
+                    }, default=str)
+                }
+            except Exception as e:
+                print(f"Erro ao registrar no DynamoDB: {e}")
+                # Continua mesmo se falhar o registro
+                return {
+                    'statusCode': 200,
+                    'body': json.dumps({
+                        'operacao': operacao,
+                        'coeficientes': {'a': a, 'b': b, 'c': c},
+                        'resultado': resultado,
+                        'db_error': str(e)
+                    }, default=str)
+                }
         
         else:
             return {
